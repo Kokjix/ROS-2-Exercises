@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 goal_point = np.array([100, 90], dtype=np.float64)
 robot_initial_position = np.array([0, 0], dtype=np.float64)
-obstacle_locations = np.array([[10, 30],[50, 60],[70, 80], [77, 79], [90,50]], dtype=np.float64)
+obstacle_locations = np.array([[10, 30],[50, 60],[70, 80], [77, 79], [90,50], [64.64, 58.2]], dtype=np.float64)
 k = 10
 virtual_expansion = 5
 step_size = 0.5
@@ -15,20 +15,24 @@ def attractive_force(position, k):
     f = k*(position - goal_point)/np.linalg.norm(position - goal_point)
     return f
 
-def repulsive_potential(position, k, r):
-    U_rep = np.exp(k * (r - np.linalg.norm(position - goal_point)))
+def repulsive_potential(position, k, r, obstacle_position):
+    U_rep = np.exp(k * (r - np.linalg.norm(position - obstacle_position)))
     return U_rep
 
 def repulsive_force(position, k, r):
-    U_rep = repulsive_potential(position,k,r)
+    total_repulsive_force = np.array([0, 0], dtype=np.float64)
 
-    norm_of_vector = np.linalg.norm(position - goal_point)
+    for obstacle_position in obstacle_locations:
+        U_rep = repulsive_potential(position, k, r, obstacle_position)
+        norm_of_vector = np.linalg.norm(position - obstacle_position)
+        
+        if norm_of_vector < 1e-6:
+            norm_of_vector = 1e-6
+        
+        force = U_rep * (position - obstacle_position) / norm_of_vector
+        total_repulsive_force += force
     
-    if norm_of_vector < 1e-6:
-        norm_of_vector = 1e-6
-    
-    f = U_rep * (position - goal_point)/norm_of_vector
-    return f
+    return total_repulsive_force
 
 def simulate():
     position = robot_initial_position
