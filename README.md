@@ -10,4 +10,5 @@ This package implements a basic path planning and obstacle avoidance algorithm f
 
 ## my_vector_field
 "The Vector Field method is a local path planning algorithm. I implemented it based on my lecture notes using C++ and integrated it into the Robotnik robot simulation (RobotnikAutomation/robotnik_simulation). Since the Robotnik simulation does not provide odometry by default, I also wrote an odometry publisher in C++. It is included in the same my_vector_field package as odom_publisher.cpp. Here's a GIF of the result:
-![Simulation demo](media/Screencast from 2025-04-14 21-38-59 (online-video-cutter.com).gif)
+
+![Simulation demo](media/sim.gif)
