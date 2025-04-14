@@ -45,6 +45,7 @@ class StaticVectorField : public rclcpp::Node
         double velocity_norm;
         double velocity_norm_for_path;
         double dt;
+        int index;
         Eigen::Vector2d actual_postion;
         Eigen::Vector2d velocity_vector;
         Eigen::Vector2d goal_point;

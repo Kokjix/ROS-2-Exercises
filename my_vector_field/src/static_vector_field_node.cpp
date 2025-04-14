@@ -7,6 +7,7 @@
 
 StaticVectorField::StaticVectorField() : Node("static_vector_field_publisher"), count_(0)
 {
+    index = 0;
     dt = 0.001;
     step_size = 1e-4;
     k = 1.0;
@@ -23,7 +24,6 @@ StaticVectorField::StaticVectorField() : Node("static_vector_field_publisher"), 
     
 
     position = initial_point;
-    actual_postion = initial_point;
     // position_for_path = initial_point;
     
     RCLCPP_INFO(this->get_logger(), "Goal Point: x=%.2f, y=%.2f", goal_point[0], goal_point[1]);
@@ -37,7 +37,7 @@ StaticVectorField::StaticVectorField() : Node("static_vector_field_publisher"), 
     marker_publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/robot/obstacle_markers", 10);
     marker_timer_ = this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&StaticVectorField::publish_obstacle_marker, this));
     calculate_points();
-    timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&StaticVectorField::publisher_control_loop, this));
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&StaticVectorField::publisher_control_loop, this));
 }
 
 auto StaticVectorField::calculate_points() -> void
@@ -93,14 +93,16 @@ auto StaticVectorField::publisher_control_loop() -> void
 
     // Publish the precomputed path
     path_publisher_->publish(path_msg);
-    
 
-    Eigen::Vector2d target_pos = path[count_];
+
+
+    Eigen::Vector2d target_pos = path[index];
     Eigen::Vector2d error_vector = target_pos - actual_postion;
     double distance_to_goal = error_vector.norm();
 
     RCLCPP_INFO(this->get_logger(), "Actual Position: x:%f, y:%f", actual_postion[0], actual_postion[1]);
     RCLCPP_INFO(this->get_logger(), "Target Postiion: x:%f, y:%f", target_pos[0], target_pos[1]);
+    RCLCPP_INFO(this->get_logger(), "Last path point: x=%.2f, y=%.2f", path.back()[0], path.back()[1]);
 
     angle_to_target = std::atan2(error_vector[1], error_vector[0]);
 
@@ -116,30 +118,33 @@ auto StaticVectorField::publisher_control_loop() -> void
     vel_msg.header.frame_id = "robot_base_controller";
 
     float linear_speed = std::min(2.0, distance_to_goal); // Adjust speed based on distance
-    float angular_speed = 0.1 * angle_to_goal_error; // Simple proportional control for angular speed
+    float angular_speed = 0.2 * angle_to_goal_error; // Simple proportional control for angular speed
     RCLCPP_INFO(this->get_logger(), "Angle_err:%f", angle_to_goal_error);
 
-    if (distance_to_goal < 0.1)
+    if (distance_to_goal < 0.01)
     {
         RCLCPP_INFO(this->get_logger(), "Hareket etmiyom.");
         vel_msg.twist.linear.x = 0.0;
         vel_msg.twist.angular.z = 0.0;
-        count_++;
+        vel_publisher_->publish(vel_msg);
+        index+=100;
     }
     
     else
     {
+        RCLCPP_INFO(this->get_logger(), "Error Vector Norm:%f", distance_to_goal);
         RCLCPP_INFO(this->get_logger(), "Hareket Ediyom YAAAY!");
 
-        vel_msg.twist.linear.x = 2 * linear_speed;
+        vel_msg.twist.linear.x = 2 * linear_speed; // probably lower the constant 2
         vel_msg.twist.angular.z = angular_speed;
 
         RCLCPP_INFO(this->get_logger(), "Vel: x:%f, ang_z:%f", vel_msg.twist.linear.x, vel_msg.twist.angular.z);
-
+        RCLCPP_INFO(this->get_logger(), "Count:%f", count_);
         vel_publisher_->publish(vel_msg);
 
-        actual_postion[0] += linear_speed * std::cos(theta) * dt;
-        actual_postion[1] += linear_speed * std::sin(theta) * dt;
+        actual_postion[0] = real_pose.position.x;
+        actual_postion[1] = real_pose.position.y;
+        index+=100; // probably need to increase 100 to 1000 maybe
     }
     if ((goal_point - actual_postion).norm() < 0.1)
     {
