@@ -44,14 +44,14 @@ class StaticVectorField : public rclcpp::Node
         float theta;
         double velocity_norm;
         double velocity_norm_for_path;
+        double dt;
+        int index;
+        Eigen::Vector2d actual_postion;
         Eigen::Vector2d velocity_vector;
-        Eigen::Vector2d velocity_vector_for_path;
-        size_t iteration_number;
         Eigen::Vector2d goal_point;
         Eigen::Vector2d initial_point;
         Eigen::MatrixXd obstacles;
         Eigen::Vector2d position;
-        Eigen::Vector2d position_for_path;
         std::vector<Eigen::Vector2d> path;
     public:
         bool break_the_loop;
